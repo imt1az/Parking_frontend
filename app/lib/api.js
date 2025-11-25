@@ -11,16 +11,22 @@ const baseHeaders = {
 };
 
 export function getApiBase() {
-  return API_BASE.replace(/\/$/, "");
+  return API_BASE;
 }
 
-export async function apiFetch(path, { method = "GET", body, token, auth = true } = {}) {
+// generic helper
+export async function apiFetch(
+  path,
+  { method = "GET", body, token, auth = true } = {}
+) {
   const headers = { ...baseHeaders };
   if (auth && token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${getApiBase()}${path}`, {
+  console.log("API CALL:", method, API_BASE + path, { body, token: !!token });
+
+  const res = await fetch(API_BASE + path, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
@@ -29,9 +35,11 @@ export async function apiFetch(path, { method = "GET", body, token, auth = true 
   let data = {};
   try {
     data = await res.json();
-  } catch (_) {
-    data = {};
+  } catch (e) {
+    console.warn("Failed to parse JSON response");
   }
+
+  console.log("API RES:", res.status, data);
 
   if (!res.ok) {
     const msg =
