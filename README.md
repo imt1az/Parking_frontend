@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Parking Chai – Frontend (Next.js)
+স্মার্ট পার্কিং প্ল্যাটফর্মের UI যেখানে Driver, Provider ও Admin সবাই একই ড্যাশবোর্ডে কাজ করতে পারে। এই ফ্রন্টএন্ড Laravel API (`/api/v1`) এর সাথে সরাসরি কথা বলে এবং JWT টোকেন ব্রাউজারের `localStorage` এ রাখে।
 
-## Getting Started
+---
 
-First, run the development server:
+## 🚀 Tech Stack
+- Next.js 14 (App Router, JS only)
+- React 19
+- TailwindCSS 4 (কাস্টম গ্লাসমরফিক স্টাইল `globals.css`)
+- JWT Auth (localStorage)
+- REST API → Laravel Parking API
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🔌 Environment
+`Parking_frontend/.env.local` তৈরি করুন:
+```
+NEXT_PUBLIC_API_BASE=http://127.0.0.1:8000/api/v1
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Laravel API চালু রাখুন (`php artisan serve`)।
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ▶️ Run / Build
+```bash
+npm install
+npm run dev      # http://localhost:3000
+npm run build && npm start
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📁 প্রকল্প কাঠামো (বর্তমান)
+- `app/page.js` — মূল ড্যাশবোর্ড, সব হ্যান্ডলার/স্টেট এখানে
+- `app/components/`
+  - `HeaderCard.js` — হিরো + ইউজার সামারি
+  - `Flash.js` — টোস্ট/ফ্ল্যাশ বার্তা
+  - `AuthCard.js` — লগইন/রেজিস্টার ফর্ম
+  - `SearchPanel.js` — lat/lng + টাইম রেঞ্জ সার্চ ও বুক বাটন
+  - `SpaceForm.js` — প্রোভাইডার/অ্যাডমিন স্পেস তৈরি
+  - `AvailabilityForm.js` — স্পেসের অ্যাভেইলেবিলিটি উইন্ডো তৈরি
+  - `BookingsList.js` — ড্রাইভার বুকিং তালিকা + অ্যাকশন
+  - `ProviderBookings.js` — প্রোভাইডার/অ্যাডমিন স্পেস বুকিং তালিকা + অ্যাকশন
+  - `SpacesList.js` — নিজের স্পেস তালিকা
+- `app/globals.css` — থিম/গ্লাস স্টাইল, বাটন/ইনপুট/ট্যাগ/স্ট্যাটাস ব্যাজ
+- `package.json` — Next 16 / React 19 / Tailwind 4
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🧭 UI ও ফ্লো (রোল অনুসারে)
+- **Driver**
+  - লগইন/রেজিস্টার (phone+password)
+  - লোকেশন/সময়ভিত্তিক সার্চ (`GET /search`)
+  - বুকিং তৈরি (`POST /bookings`)
+  - নিজের বুকিং দেখুন/ক্যানসেল (`GET /bookings/my`, `PATCH /bookings/{id}/cancel`)
+- **Provider/Admin**
+  - স্পেস তৈরি ও তালিকা (`POST /spaces`, `GET /spaces/my`)
+  - অ্যাভেইলেবিলিটি সেট (`POST /spaces/{space}/availability`)
+  - স্পেস বুকিং তালিকা (`GET /bookings/for-my-spaces`)
+  - বুকিং স্ট্যাটাস অ্যাকশন: confirm, check-in, check-out, cancel
+- **Admin**
+  - প্রোভাইডার যা পারে সবই করতে পারে (UI একই পাথে)
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔗 API এন্ডপয়েন্ট ম্যাপিং
+- Auth: `POST /auth/login`, `POST /auth/register`, `POST /auth/refresh`, `POST /auth/logout`
+- Spaces: `POST /spaces`, `GET /spaces/my`, `PATCH /spaces/{id}`, `GET /spaces/{id}`
+- Availability: `POST /spaces/{space}/availability`
+- Search: `GET /search?lat&lng&start_ts&end_ts&radius_m`
+- Bookings:
+  - Driver: `POST /bookings`, `GET /bookings/my`, `PATCH /bookings/{id}/cancel`
+  - Provider/Admin: `GET /bookings/for-my-spaces`, `PATCH /bookings/{id}/confirm|check-in|check-out|cancel`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## ✅ দ্রুত চেকলিস্ট
+- `.env.local` সেট হয়েছে
+- Laravel API চলছে
+- ডেমো ফোন/পাসওয়ার্ড (backend seeder অনুযায়ী) দিয়ে লগইন করুন: `01700000001/02/03` + `password`
+- Driver দিয়ে সার্চ ও বুক করুন → Provider/Admin দিয়ে কনফার্ম/চেক-ইন/আউট করুন
+
+---
+
+## 🧭 ভবিষ্যৎ উন্নয়ন (প্রস্তাব)
+- আলাদা রুটভিত্তিক ড্যাশবোর্ড (driver/provider/admin) + পার্সিস্টেড প্রোটেক্টেড রাউটিং
+- Axios/React Query + API লেয়ারে টোকেন রিফ্রেশ
+- Form validation ও লোডার/স্কেলেটন স্টেট
+- কম্পোনেন্ট লাইব্রেরি (`ui/Button`, `Input`, `Modal`) আলাদা করা
+
