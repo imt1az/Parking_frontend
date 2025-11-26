@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { apiFetch } from "../lib/api";
@@ -34,7 +34,8 @@ export default function DashboardPage() {
     base_price_per_hour: 0,
   });
 
-  // Auth check once
+  const [providerTab, setProviderTab] = useState("spaces"); // spaces | availability | bookings
+
   useEffect(() => {
     const existing = loadAuth();
     if (!existing?.access_token) {
@@ -49,7 +50,16 @@ export default function DashboardPage() {
     setLoading(false);
   }, [router]);
 
-  // Data loaders
+  // Prefill address from map pick
+  useEffect(() => {
+    if (!picked) return;
+    setSpaceForm((prev) => ({
+      ...prev,
+      address: picked.address || prev.address,
+      place_query: picked.address || prev.place_query,
+    }));
+  }, [picked]);
+
   const loadDriver = useCallback(async () => {
     try {
       const res = await apiFetch("/bookings/my", { token: auth?.access_token });
@@ -79,7 +89,6 @@ export default function DashboardPage() {
     }
   }, [auth?.access_token]);
 
-  // Run loaders when auth ready
   useEffect(() => {
     if (!authChecked || !auth?.access_token) return;
     const role = auth.user?.role;
@@ -153,300 +162,318 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading || !authChecked) return null;
   const role = auth?.user?.role;
 
+  const sidebar = useMemo(() => {
+    const items = [];
+    if (role === "driver") items.push({ label: "ড্রাইভার", onClick: () => {} });
+    if (role === "provider") items.push({ label: "প্রোভাইডার", onClick: () => {} });
+    if (role === "admin") items.push({ label: "অ্যাডমিন", onClick: () => {} });
+    return items;
+  }, [role]);
+
+  if (loading || !authChecked) return null;
+
   return (
-    <main className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-zinc-200">
-        <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white grid place-items-center font-bold">
-            D
+    <main className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-emerald-50/20 text-zinc-900">
+      <div className="max-w-6xl mx-auto p-6 grid md:grid-cols-[240px,1fr] gap-6">
+        <aside className="bg-white border border-zinc-200 rounded-2xl shadow-sm p-4 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white grid place-items-center font-bold">
+              P
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-600 font-semibold">Dashboard</p>
+              <p className="text-sm font-semibold">{auth?.user?.name}</p>
+              <p className="text-xs text-zinc-500">{role}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-emerald-600 font-semibold uppercase tracking-[0.2em]">
-              Dashboard
-            </p>
-            <h1 className="font-bold text-lg">Role: {role}</h1>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-zinc-600">{auth?.user?.name}</span>
-          <button
-            onClick={logout}
-            className="px-3 py-2 rounded-lg border border-zinc-200 hover:border-emerald-300"
-          >
-            লগআউট
-          </button>
-        </div>
-      </header>
-
-      <div className="p-6 space-y-6">
-        {error && (
-          <div className="p-3 rounded-lg bg-red-50 text-red-700 border border-red-100">
-            {error}
-          </div>
-        )}
-
-        {role === "driver" && (
-          <section className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">আমার বুকিং</h2>
+          <div className="flex flex-wrap gap-2">
+            {sidebar.map((item, idx) => (
               <button
-                onClick={() => router.push("/")}
-                className="text-sm text-emerald-700 font-semibold"
+                key={idx}
+                onClick={item.onClick}
+                className="px-3 py-2 rounded-xl border border-zinc-100 hover:border-emerald-300 hover:bg-emerald-50 text-sm font-semibold"
               >
-                নতুন পার্কিং খুঁজুন
+                {item.label}
               </button>
+            ))}
+            <button
+              onClick={logout}
+              className="px-3 py-2 rounded-xl border border-red-100 text-red-700 hover:bg-red-50 text-sm font-semibold"
+            >
+              লগআউট
+            </button>
+          </div>
+        </aside>
+
+        <section className="space-y-6">
+          {error && (
+            <div className="p-3 rounded-xl bg-red-50 text-red-700 border border-red-100">
+              {error}
             </div>
-            <div className="grid gap-3">
-              {bookings.length === 0 && (
-                <p className="text-sm text-zinc-600">কোনো বুকিং নেই।</p>
-              )}
-              {bookings.map((b) => (
-                <div
-                  key={b.id}
-                  className="border border-zinc-200 rounded-xl p-3 flex items-center justify-between"
-                >
-                  <div className="space-y-1">
-                    <p className="font-semibold">{b.space?.title}</p>
-                    <p className="text-xs text-zinc-500">
-                      {b.start_ts} → {b.end_ts}
-                    </p>
-                    <p className="text-xs text-zinc-500">
-                      স্ট্যাটাস: <span className="font-semibold">{b.status}</span>
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    {["reserved", "confirmed"].includes(b.status) && (
-                      <button
-                        onClick={() => updateBookingStatus(b.id, "cancel")}
-                        className="px-3 py-2 rounded-lg border border-red-200 text-red-700"
-                      >
-                        বাতিল
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+          )}
 
-        {(role === "provider" || role === "admin") && (
-          <>
-            <section className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">স্পেস তৈরি করুন</h2>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <input
-                  className="border border-zinc-200 rounded-lg px-3 py-2"
-                  placeholder="শিরোনাম"
-                  value={spaceForm.title}
-                  onChange={(e) =>
-                    setSpaceForm({ ...spaceForm, title: e.target.value })
-                  }
-                />
-                <input
-                  className="border border-zinc-200 rounded-lg px-3 py-2"
-                  placeholder="ঠিকানা"
-                  value={spaceForm.address}
-                  onChange={(e) =>
-                    setSpaceForm({ ...spaceForm, address: e.target.value })
-                  }
-                />
-                <input
-                  className="border border-zinc-200 rounded-lg px-3 py-2"
-                  placeholder="place_query (ঠিকানা/এলাকা)"
-                  value={spaceForm.place_query}
-                  onChange={(e) =>
-                    setSpaceForm({ ...spaceForm, place_query: e.target.value })
-                  }
-                />
-                <input
-                  type="number"
-                  min="1"
-                  className="border border-zinc-200 rounded-lg px-3 py-2"
-                  placeholder="Capacity"
-                  value={spaceForm.capacity}
-                  onChange={(e) =>
-                    setSpaceForm({ ...spaceForm, capacity: e.target.value })
-                  }
-                />
-                <div className="md:col-span-2">
-                  <MapPicker value={picked} onChange={setPicked} />
-                </div>
-              </div>
-              <div className="mt-3">
-                <button
-                  onClick={createSpace}
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold"
-                >
-                  তৈরি করুন
-                </button>
-              </div>
-            </section>
-
-            <section className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">আমার স্পেস</h2>
-              </div>
-              <div className="grid gap-3">
-                {spaces.length === 0 && (
-                  <p className="text-sm text-zinc-600">কোনো স্পেস নেই।</p>
-                )}
-                {spaces.map((s) => (
-                  <div
-                    key={s.id}
-                    className="border border-zinc-200 rounded-xl p-3 flex items-center justify-between"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-semibold">{s.title}</p>
-                      <p className="text-xs text-zinc-500">
-                        {s.address || s.place_label || "ঠিকানা নেই"}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        Capacity {s.capacity ?? 1} | Active:{" "}
-                        {s.is_active ? "Yes" : "No"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">অ্যাভেইলেবিলিটি যোগ করুন</h2>
-              </div>
-              <div className="grid gap-3 md:grid-cols-4">
-                <select
-                  className="border border-zinc-200 rounded-lg px-3 py-2"
-                  value={availabilityForm.space_id}
-                  onChange={(e) =>
-                    setAvailabilityForm({
-                      ...availabilityForm,
-                      space_id: e.target.value,
-                    })
-                  }
-                >
-                  <option value="">স্পেস নির্বাচন</option>
-                  {spaces.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.title}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="datetime-local"
-                  className="border border-zinc-200 rounded-lg px-3 py-2"
-                  value={availabilityForm.start_ts}
-                  onChange={(e) =>
-                    setAvailabilityForm({
-                      ...availabilityForm,
-                      start_ts: e.target.value,
-                    })
-                  }
-                />
-                <input
-                  type="datetime-local"
-                  className="border border-zinc-200 rounded-lg px-3 py-2"
-                  value={availabilityForm.end_ts}
-                  onChange={(e) =>
-                    setAvailabilityForm({
-                      ...availabilityForm,
-                      end_ts: e.target.value,
-                    })
-                  }
-                />
-                <input
-                  type="number"
-                  min="0"
-                  className="border border-zinc-200 rounded-lg px-3 py-2"
-                  placeholder="Price/hour"
-                  value={availabilityForm.base_price_per_hour}
-                  onChange={(e) =>
-                    setAvailabilityForm({
-                      ...availabilityForm,
-                      base_price_per_hour: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div className="mt-3">
-                <button
-                  onClick={addAvailability}
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold"
-                >
-                  যোগ করুন
-                </button>
-              </div>
-            </section>
-
-            <section className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">আমার স্পেসের বুকিং</h2>
-              </div>
-              <div className="grid gap-3">
-                {providerBookings.length === 0 && (
-                  <p className="text-sm text-zinc-600">কোনো বুকিং নেই।</p>
-                )}
-                {providerBookings.map((b) => (
-                  <div
+          {role === "driver" && (
+            <Card title="আমার বুকিং" actions={<Button onClick={() => router.push("/")}>নতুন পার্কিং খুঁজুন</Button>}>
+              <Empty show={bookings.length === 0} text="কোনো বুকিং নেই।" />
+              <div className="space-y-3">
+                {bookings.map((b) => (
+                  <ListItem
                     key={b.id}
-                    className="border border-zinc-200 rounded-xl p-3 flex items-center justify-between"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-semibold">{b.space?.title}</p>
-                      <p className="text-xs text-zinc-500">
-                        {b.start_ts} → {b.end_ts}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        স্ট্যাটাস: <span className="font-semibold">{b.status}</span>
-                      </p>
-                    </div>
-                    <div className="flex gap-2 flex-wrap justify-end">
-                      {b.status === "reserved" && (
-                        <button
-                          onClick={() => updateBookingStatus(b.id, "confirm")}
-                          className="px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"
-                        >
-                          কনফার্ম
-                        </button>
-                      )}
-                      {["reserved", "confirmed"].includes(b.status) && (
-                        <button
-                          onClick={() => updateBookingStatus(b.id, "cancel")}
-                          className="px-3 py-2 rounded-lg border border-red-200 text-red-700 text-sm"
-                        >
+                    title={b.space?.title}
+                    subtitle={`${b.start_ts} → ${b.end_ts}`}
+                    meta={`স্ট্যাটাস: ${b.status}`}
+                    actions={
+                      ["reserved", "confirmed"].includes(b.status) ? (
+                        <Button variant="danger" onClick={() => updateBookingStatus(b.id, "cancel")}>
                           বাতিল
-                        </button>
-                      )}
-                      {b.status === "confirmed" && (
-                        <button
-                          onClick={() => updateBookingStatus(b.id, "check-in")}
-                          className="px-3 py-2 rounded-lg bg-amber-500 text-white text-sm"
-                        >
-                          চেক-ইন
-                        </button>
-                      )}
-                      {b.status === "checked_in" && (
-                        <button
-                          onClick={() => updateBookingStatus(b.id, "check-out")}
-                          className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm"
-                        >
-                          চেক-আউট
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                        </Button>
+                      ) : null
+                    }
+                  />
                 ))}
               </div>
-            </section>
-          </>
-        )}
+            </Card>
+          )}
+
+          {(role === "provider" || role === "admin") && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: "spaces", label: "স্পেস" },
+                  { key: "availability", label: "অ্যাভেইলেবিলিটি" },
+                  { key: "bookings", label: "বুকিং" },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setProviderTab(tab.key)}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold border transition ${
+                      providerTab === tab.key
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                        : "border-zinc-200 text-zinc-700 hover:border-emerald-300"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {providerTab === "spaces" && (
+                <>
+                  <Card title="স্পেস তৈরি করুন">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <Input
+                        label="শিরোনাম"
+                        value={spaceForm.title}
+                        onChange={(v) => setSpaceForm({ ...spaceForm, title: v })}
+                      />
+                      <Input
+                        label="ঠিকানা"
+                        value={spaceForm.address}
+                        onChange={(v) => setSpaceForm({ ...spaceForm, address: v })}
+                      />
+                      <Input
+                        label="place_query (ঠিকানা/এলাকা)"
+                        value={spaceForm.place_query}
+                        onChange={(v) => setSpaceForm({ ...spaceForm, place_query: v })}
+                      />
+                      <Input
+                        label="Capacity"
+                        type="number"
+                        min="1"
+                        value={spaceForm.capacity}
+                        onChange={(v) => setSpaceForm({ ...spaceForm, capacity: v })}
+                      />
+                      <div className="md:col-span-2">
+                        <MapPicker value={picked} onChange={setPicked} />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <Button onClick={createSpace}>তৈরি করুন</Button>
+                    </div>
+                  </Card>
+
+                  <Card title="আমার স্পেস">
+                    <Empty show={spaces.length === 0} text="কোনো স্পেস নেই।" />
+                    <div className="space-y-3">
+                      {spaces.map((s) => (
+                        <ListItem
+                          key={s.id}
+                          title={s.title}
+                          subtitle={s.address || s.place_label || "ঠিকানা নেই"}
+                          meta={`Capacity ${s.capacity ?? 1} | Active: ${s.is_active ? "Yes" : "No"}`}
+                        />
+                      ))}
+                    </div>
+                  </Card>
+                </>
+              )}
+
+              {providerTab === "availability" && (
+                <Card title="অ্যাভেইলেবিলিটি যোগ করুন">
+                  <div className="grid gap-3 md:grid-cols-4">
+                    <Select
+                      label="স্পেস নির্বাচন"
+                      value={availabilityForm.space_id}
+                      onChange={(v) => setAvailabilityForm({ ...availabilityForm, space_id: v })}
+                      options={spaces.map((s) => ({ value: s.id, label: s.title }))}
+                    />
+                    <Input
+                      label="শুরুর সময়"
+                      type="datetime-local"
+                      value={availabilityForm.start_ts}
+                      onChange={(v) => setAvailabilityForm({ ...availabilityForm, start_ts: v })}
+                    />
+                    <Input
+                      label="শেষ সময়"
+                      type="datetime-local"
+                      value={availabilityForm.end_ts}
+                      onChange={(v) => setAvailabilityForm({ ...availabilityForm, end_ts: v })}
+                    />
+                    <Input
+                      label="Price/hour"
+                      type="number"
+                      min="0"
+                      value={availabilityForm.base_price_per_hour}
+                      onChange={(v) =>
+                        setAvailabilityForm({ ...availabilityForm, base_price_per_hour: v })
+                      }
+                    />
+                  </div>
+                  <div className="mt-3">
+                    <Button onClick={addAvailability}>যোগ করুন</Button>
+                  </div>
+                </Card>
+              )}
+
+              {providerTab === "bookings" && (
+                <Card title="আমার স্পেসের বুকিং">
+                  <Empty show={providerBookings.length === 0} text="কোনো বুকিং নেই।" />
+                  <div className="space-y-3">
+                    {providerBookings.map((b) => (
+                      <ListItem
+                        key={b.id}
+                        title={b.space?.title}
+                        subtitle={`${b.start_ts} → ${b.end_ts}`}
+                        meta={`স্ট্যাটাস: ${b.status}`}
+                        actions={
+                          <div className="flex gap-2 flex-wrap">
+                            {b.status === "reserved" && (
+                              <Button onClick={() => updateBookingStatus(b.id, "confirm")}>
+                                কনফার্ম
+                              </Button>
+                            )}
+                            {["reserved", "confirmed"].includes(b.status) && (
+                              <Button variant="danger" onClick={() => updateBookingStatus(b.id, "cancel")}>
+                                বাতিল
+                              </Button>
+                            )}
+                            {b.status === "confirmed" && (
+                              <Button variant="amber" onClick={() => updateBookingStatus(b.id, "check-in")}>
+                                চেক-ইন
+                              </Button>
+                            )}
+                            {b.status === "checked_in" && (
+                              <Button variant="blue" onClick={() => updateBookingStatus(b.id, "check-out")}>
+                                চেক-আউট
+                              </Button>
+                            )}
+                          </div>
+                        }
+                      />
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </>
+          )}
+        </section>
       </div>
     </main>
   );
+}
+
+// UI helpers
+function Card({ title, actions, children }) {
+  return (
+    <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+        {actions}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Button({ children, onClick, variant = "primary" }) {
+  const styles =
+    variant === "danger"
+      ? "border border-red-200 text-red-700 hover:bg-red-50"
+      : variant === "amber"
+      ? "bg-amber-500 text-white hover:bg-amber-600"
+      : variant === "blue"
+      ? "bg-blue-600 text-white hover:bg-blue-700"
+      : "bg-emerald-600 text-white hover:bg-emerald-700";
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${styles}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Input({ label, value, onChange, ...props }) {
+  return (
+    <label className="space-y-1 text-sm text-zinc-700">
+      <span>{label}</span>
+      <input
+        {...props}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-zinc-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+      />
+    </label>
+  );
+}
+
+function Select({ label, value, onChange, options }) {
+  return (
+    <label className="space-y-1 text-sm text-zinc-700">
+      <span>{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-zinc-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+      >
+        <option value="">-- নির্বাচন করুন --</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function ListItem({ title, subtitle, meta, actions }) {
+  return (
+    <div className="border border-zinc-200 rounded-xl p-3 flex items-center justify-between gap-3">
+      <div className="space-y-1">
+        <p className="font-semibold">{title}</p>
+        {subtitle && <p className="text-xs text-zinc-500">{subtitle}</p>}
+        {meta && <p className="text-xs text-zinc-500">{meta}</p>}
+      </div>
+      {actions && <div className="flex gap-2 flex-wrap">{actions}</div>}
+    </div>
+  );
+}
+
+function Empty({ show, text }) {
+  if (!show) return null;
+  return <p className="text-sm text-zinc-600">{text}</p>;
 }

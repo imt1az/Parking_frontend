@@ -3,49 +3,52 @@
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 
-// Lightweight Leaflet loader via CDN to avoid extra installs.
+// Load Leaflet (CDN) lazily
 function loadLeaflet() {
   return new Promise((resolve, reject) => {
     if (typeof window === "undefined") return reject();
     if (window.L && window.L.map) return resolve(window.L);
 
-    const existingCss = document.querySelector('link[data-leaflet]');
-    const existingJs = document.querySelector('script[data-leaflet]');
-    if (existingCss && existingJs) {
-      existingJs.addEventListener("load", () => resolve(window.L));
-      return;
-    }
-
     const css = document.createElement("link");
     css.rel = "stylesheet";
     css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
     css.crossOrigin = "";
-    css.dataset.leaflet = "true";
     document.head.appendChild(css);
 
     const script = document.createElement("script");
     script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
     script.crossOrigin = "";
-    script.dataset.leaflet = "true";
     script.onload = () => resolve(window.L);
     script.onerror = reject;
     document.body.appendChild(script);
   });
 }
 
+// Reverse geocode via Nominatim (no key)
+async function reverseGeocode(lat, lng) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
+  const res = await fetch(url, {
+    headers: { "User-Agent": "parking-app/1.0" },
+  });
+  if (!res.ok) throw new Error("Reverse geocode failed");
+  const data = await res.json();
+  return data.display_name || "";
+}
+
 /**
- * Map picker with click-to-drop marker and optional address search.
+ * Leaflet map picker with search + reverse geocode on click/drag.
  * Props:
  *  - value: { lat, lng, address? }
  *  - onChange: fn({ lat, lng, address? })
  */
-export default function MapPicker({ value, onChange, label = "লোকেশন" }) {
+export default function MapPicker({ value, onChange, label = "মানচিত্রে লোকেশন" }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markerRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -54,25 +57,35 @@ export default function MapPicker({ value, onChange, label = "লোকেশন
       .then((L) => {
         if (!isMounted) return;
         setReady(true);
-        const start = value?.lat && value?.lng ? [value.lat, value.lng] : [23.8103, 90.4125]; // Dhaka fallback
-        mapInstance.current = L.map(mapRef.current, {
-          center: start,
-          zoom: 13,
-        });
+        const start = value?.lat && value?.lng ? [value.lat, value.lng] : [23.8103, 90.4125]; // Dhaka
+        mapInstance.current = L.map(mapRef.current, { center: start, zoom: 13 });
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '&copy; OpenStreetMap',
+          attribution: "&copy; OpenStreetMap",
         }).addTo(mapInstance.current);
 
         markerRef.current = L.marker(start, { draggable: true }).addTo(mapInstance.current);
+
+        const handlePosition = async (ll) => {
+          setBusy(true);
+          try {
+            const addr = await reverseGeocode(ll.lat, ll.lng);
+            onChange?.({ lat: ll.lat, lng: ll.lng, address: addr });
+          } catch {
+            onChange?.({ lat: ll.lat, lng: ll.lng, address: value?.address });
+          } finally {
+            setBusy(false);
+          }
+        };
+
         markerRef.current.on("dragend", (e) => {
           const ll = e.target.getLatLng();
-          onChange?.({ lat: ll.lat, lng: ll.lng, address: value?.address });
+          handlePosition(ll);
         });
 
         mapInstance.current.on("click", (e) => {
           const ll = e.latlng;
           markerRef.current.setLatLng(ll);
-          onChange?.({ lat: ll.lat, lng: ll.lng, address: value?.address });
+          handlePosition(ll);
         });
       })
       .catch(() => setError("মানচিত্র লোড করতে সমস্যা হয়েছে"));
@@ -85,11 +98,12 @@ export default function MapPicker({ value, onChange, label = "লোকেশন
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Keep marker in sync when parent changes location externally
+  // Keep marker in sync if parent changes value
   useEffect(() => {
     if (!ready || !value?.lat || !value?.lng || !markerRef.current || !mapInstance.current) return;
-    markerRef.current.setLatLng([value.lat, value.lng]);
-    mapInstance.current.setView([value.lat, value.lng], mapInstance.current.getZoom());
+    const ll = [value.lat, value.lng];
+    markerRef.current.setLatLng(ll);
+    mapInstance.current.setView(ll, mapInstance.current.getZoom());
   }, [value, ready]);
 
   const runSearch = async () => {
@@ -135,6 +149,7 @@ export default function MapPicker({ value, onChange, label = "লোকেশন
         </button>
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
+      {busy && <p className="text-xs text-zinc-500">ঠিকানা আনছে...</p>}
       <div
         ref={mapRef}
         className="w-full rounded-xl border border-zinc-200 overflow-hidden"
