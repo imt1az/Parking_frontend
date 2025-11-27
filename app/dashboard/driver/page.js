@@ -1,114 +1,131 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Card from "../../components/ui/Card";
-import Button from "../../components/ui/Button";
-import SearchPanel from "../../components/SearchPanel";
-import BookingsList from "../../components/BookingsList";
-import { api, session } from "../../../lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { apiFetch } from "../../lib/api";
+import { clearAuth, loadAuth } from "../../lib/auth";
 
 export default function DriverPage() {
-  const [auth, setAuth] = useState(() => session.get());
-  const [searchForm, setSearchForm] = useState({
-    lat: "",
-    lng: "",
-    start_ts: "",
-    end_ts: "",
-    radius_m: 1500,
-  });
-  const [results, setResults] = useState([]);
+  const router = useRouter();
+  const [auth, setAuth] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [bookings, setBookings] = useState([]);
-  const [flash, setFlash] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (auth.token) loadBookings();
-  }, [auth.token]);
-
-  const toast = (msg) => {
-    setFlash(msg);
-    setTimeout(() => setFlash(""), 2500);
-  };
-
-  const loadBookings = async () => {
-    try {
-      const res = await api.myBookings(auth.token);
-      setBookings(res.data || res || []);
-    } catch (e) {
-      toast(e.message);
+    const existing = loadAuth();
+    if (!existing?.access_token || existing?.user?.role !== "driver") {
+      clearAuth();
+      router.replace("/login");
+      return;
     }
-  };
+    setAuth(existing);
+    setAuthChecked(true);
+    setLoading(false);
+  }, [router]);
 
-  const doSearch = async () => {
+  const loadBookings = useCallback(async () => {
+    if (!auth?.access_token) return;
     try {
-      const res = await api.search(searchForm);
-      setResults(res.items || []);
-      toast(`Found ${res.count} spaces`);
+      const res = await apiFetch("/bookings/my", { token: auth.access_token });
+      setBookings(res?.data || res || []);
     } catch (e) {
-      toast(e.message);
+      setError(e.message);
     }
-  };
+  }, [auth?.access_token]);
 
-  const bookSpace = async (spaceId) => {
-    try {
-      const res = await api.createBooking(
-        {
-          space_id: spaceId,
-          start_ts: searchForm.start_ts,
-          end_ts: searchForm.end_ts,
-        },
-        auth.token
-      );
-      toast("Booked");
-      setBookings([res, ...bookings]);
-    } catch (e) {
-      toast(e.message);
-    }
-  };
+  useEffect(() => {
+    if (!authChecked || !auth?.access_token) return;
+    loadBookings();
+  }, [authChecked, auth?.access_token, loadBookings]);
 
-  const cancelBooking = async (id) => {
+  const updateBookingStatus = async (id, action) => {
     try {
-      await api.bookingAction(id, "cancel", auth.token);
-      toast("Cancelled");
+      await apiFetch(`/bookings/${id}/${action}`, {
+        method: "PATCH",
+        token: auth?.access_token,
+      });
       loadBookings();
     } catch (e) {
-      toast(e.message);
+      setError(e.message);
     }
   };
 
+  const logout = () => {
+    clearAuth();
+    router.replace("/login");
+  };
+
+  if (loading || !authChecked) return null;
+
   return (
-    <div className="grid" style={{ gap: 16 }}>
-      <Card className="hero">
-        <div className="badge">Driver</div>
-        <h2 className="section-title">Search & book nearest parking</h2>
-        <p className="muted">Location, time window দিয়ে খুঁজুন; সঙ্গে সঙ্গেই বুক করুন।</p>
-      </Card>
+    <main className="min-h-screen bg-zinc-50 text-zinc-900">
+      <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+        <header className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-emerald-600 font-semibold">
+              Driver
+            </p>
+            <h1 className="text-2xl font-bold">আমার বুকিং</h1>
+            <p className="text-sm text-zinc-600">
+              দ্রুত বুকিং দেখুন, বাতিল করুন, নতুন সার্চের জন্য হোমে যান।
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => router.push("/")}
+              className="px-4 py-2 rounded-lg border border-emerald-200 text-emerald-700 font-semibold hover:border-emerald-400"
+            >
+              পার্কিং সার্চ
+            </button>
+            <button
+              onClick={logout}
+              className="px-4 py-2 rounded-lg bg-zinc-900 text-white font-semibold hover:bg-black"
+            >
+              লগআউট
+            </button>
+          </div>
+        </header>
 
-      {flash && <Card style={{ borderColor: "var(--accent)" }}>{flash}</Card>}
+        {error && (
+          <div className="p-3 rounded-xl bg-red-50 text-red-700 border border-red-100">
+            {error}
+          </div>
+        )}
 
-      <div className="grid two">
-        <SearchPanel
-          form={searchForm}
-          onChange={setSearchForm}
-          onSearch={doSearch}
-          results={results}
-          onBook={bookSpace}
-          role="driver"
-        />
-
-        <BookingsList
-          title="My Bookings"
-          bookings={bookings}
-          role="driver"
-          onRefresh={loadBookings}
-          actions={(b) =>
-            ["reserved", "confirmed"].includes(b.status) ? (
-              <Button variant="ghost" onClick={() => cancelBooking(b.id)}>
-                Cancel
-              </Button>
-            ) : null
-          }
-        />
+        <section className="bg-white border border-zinc-200 rounded-2xl shadow-sm p-5 space-y-3">
+          {bookings.length === 0 && (
+            <p className="text-sm text-zinc-600">কোনো বুকিং নেই।</p>
+          )}
+          {bookings.map((b) => (
+            <div
+              key={b.id}
+              className="border border-zinc-200 rounded-xl p-3 flex items-center justify-between gap-3"
+            >
+              <div className="space-y-1">
+                <p className="font-semibold">{b.space?.title}</p>
+                <p className="text-xs text-zinc-500">
+                  {b.start_ts} → {b.end_ts}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  স্ট্যাটাস: <span className="font-semibold">{b.status}</span>
+                </p>
+              </div>
+              <div className="flex gap-2 flex-wrap justify-end">
+                {["reserved", "confirmed"].includes(b.status) && (
+                  <button
+                    onClick={() => updateBookingStatus(b.id, "cancel")}
+                    className="px-3 py-2 rounded-lg border border-red-200 text-red-700 text-sm hover:bg-red-50"
+                  >
+                    বাতিল
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
