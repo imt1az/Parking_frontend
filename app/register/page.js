@@ -38,7 +38,7 @@ export default function RegisterPage() {
       saveAuth(data);
       router.push("/dashboard");
     } catch (e) {
-      setError(e.message || "রেজিস্টার ব্যর্থ");
+      setError(e.message || "রেজিস্ট্রেশন সম্পন্ন হয়নি");
     } finally {
       setLoading(false);
     }
@@ -51,9 +51,9 @@ export default function RegisterPage() {
           <p className="text-xs font-semibold text-emerald-600 uppercase tracking-[0.2em]">
             Parking Portal
           </p>
-          <h1 className="text-2xl font-bold text-zinc-900">রেজিস্টার</h1>
+          <h1 className="text-2xl font-bold text-zinc-900">নতুন একাউন্ট তৈরি করুন</h1>
           <p className="text-sm text-zinc-600">
-            নাম, ফোন, পাসওয়ার্ড দিয়ে দ্রুত একটি অ্যাকাউন্ট বানান।
+            নাম, ফোন নম্বর, পাসওয়ার্ড ও প্রয়োজনীয় ভূমিকা নির্বাচন করুন। ড্যাশবোর্ডে লগইন হয়ে সরাসরি শুরু করতে পারবেন।
           </p>
         </div>
 
@@ -62,13 +62,13 @@ export default function RegisterPage() {
             <label className="text-sm text-zinc-700">নাম</label>
             <input
               className="w-full rounded-lg border border-zinc-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="আপনার নাম"
+              placeholder="পূর্ণ নাম"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm text-zinc-700">ফোন</label>
+            <label className="text-sm text-zinc-700">মোবাইল নম্বর</label>
             <input
               className="w-full rounded-lg border border-zinc-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="01700000001"
@@ -81,13 +81,13 @@ export default function RegisterPage() {
             <input
               type="password"
               className="w-full rounded-lg border border-zinc-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="••••••••"
+              placeholder="********"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
           </div>
           <div className="space-y-1 sm:col-span-2">
-            <label className="text-sm text-zinc-700">রোল</label>
+            <label className="text-sm text-zinc-700">ভূমিকা নির্বাচন করুন</label>
             <div className="grid grid-cols-3 gap-2">
               {roles.map((r) => (
                 <button
@@ -115,13 +115,13 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-emerald-600 text-white py-2.5 rounded-lg font-semibold shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition disabled:opacity-60"
           >
-            {loading ? "রেজিস্টার হচ্ছে..." : "রেজিস্টার"}
+            {loading ? "তৈরি হচ্ছে..." : "একাউন্ট তৈরি করুন"}
           </button>
           <button
             onClick={() => router.push("/login")}
             className="w-full border border-zinc-200 py-2.5 rounded-lg font-semibold hover:border-emerald-300 transition"
           >
-            অ্যাকাউন্ট আছে? লগইন করুন
+            আগে থেকে একাউন্ট আছে? সাইন ইন করুন
           </button>
         </div>
       </div>

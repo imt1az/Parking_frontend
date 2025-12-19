@@ -26,6 +26,37 @@ const SLIDES = [
   },
 ];
 
+const FEATURES = [
+  { title: "Live GPS", desc: "Use your current location to search instantly.", icon: "GPS" },
+  { title: "Smart filters", desc: "Height limits, distance, and pricing built in.", icon: "FILTER" },
+  { title: "One-tap booking", desc: "Reserve or cancel in seconds, no calls needed.", icon: "FAST" },
+];
+
+const PROVIDER_TOOLS = [
+  { title: "Space creator", desc: "Drop a pin, set capacity, and go live.", accent: "emerald" },
+  { title: "Availability rules", desc: "Define hourly windows and pricing per slot.", accent: "amber" },
+  { title: "Booking control", desc: "Confirm, check-in/out, or cancel with a click.", accent: "blue" },
+];
+
+const STEPS = [
+  { title: "Search", detail: "Type an address or tap on the map to pick a spot." },
+  { title: "Choose time", detail: "Set start/end and see only available spaces." },
+  { title: "Book & go", detail: "Instant confirmation, live timeline, easy cancel." },
+];
+
+const TESTIMONIALS = [
+  {
+    name: "Ayesha - Driver",
+    quote: "Found a garage near the clinic in under a minute. Booking felt effortless.",
+    avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    name: "Rahim - Provider",
+    quote: "Dropping a pin and setting availability took minutes. Bookings showed up day one.",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+  },
+];
+
 export default function Home() {
   const router = useRouter();
   const [auth, setAuth] = useState(null);
@@ -138,37 +169,56 @@ export default function Home() {
 
         <section className="pb-12 grid gap-10 md:grid-cols-[1.1fr,0.9fr] items-center">
           <div className="space-y-6">
-            <div className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl">
+            <div className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-2xl">
               <div
-                className="absolute inset-0 bg-cover bg-center transition-all duration-500"
+                className="absolute inset-0 bg-cover bg-center transition-all duration-500 scale-105"
                 style={{ backgroundImage: `url(${SLIDES[slide].img})`, filter: "brightness(0.75)" }}
               ></div>
-              <div className="relative p-6 md:p-8 space-y-3 text-white">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">
-                  <span className="h-2 w-2 rounded-full bg-emerald-300"></span>
-                  Live parking network
-                </span>
-                <h2 className="text-3xl md:text-4xl font-bold leading-tight">{SLIDES[slide].title}</h2>
+              <div className="relative p-6 md:p-8 space-y-4 text-white">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">
+                    <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse"></span>
+                    Live parking network
+                  </span>
+                  <div className="flex -space-x-2">
+                    {TESTIMONIALS.map((t, idx) => (
+                      <img
+                        key={idx}
+                        src={t.avatar}
+                        alt={t.name}
+                        className="h-8 w-8 rounded-full border-2 border-white shadow"
+                      />
+                    ))}
+                    <span className="text-xs bg-white/20 px-2 py-1 rounded-full backdrop-blur">Trusted users</span>
+                  </div>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold leading-tight drop-shadow-md">{SLIDES[slide].title}</h2>
                 <p className="text-sm md:text-base text-white/90">{SLIDES[slide].subtitle}</p>
                 <div className="flex flex-wrap gap-2">
                   {SLIDES.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setSlide(idx)}
-                      className={`h-2 w-6 rounded-full transition ${idx === slide ? "bg-white" : "bg-white/50"}`}
+                      className={`h-2 w-8 rounded-full transition duration-300 ${idx === slide ? "bg-white" : "bg-white/50"}`}
                     />
                   ))}
                 </div>
               </div>
             </div>
 
-            <p className="text-lg text-zinc-700 max-w-2xl">
-              Search by address or use live GPS, see nearby garages with live availability, and manage bookings with role-specific dashboards for drivers and providers.
-            </p>
+            <div className="bg-white border border-emerald-100 rounded-3xl shadow-lg p-5 flex flex-col gap-3">
+              <p className="text-lg text-zinc-800 max-w-2xl">
+                Search by address or use live GPS, see nearby garages with live availability, and manage bookings with role-specific dashboards for drivers and providers.
+              </p>
+              <div className="flex items-center gap-3 text-sm text-emerald-700">
+                <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-emerald-100 text-emerald-700 font-semibold">24/7</span>
+                <p>Always-on availability checks with instant confirmation.</p>
+              </div>
+            </div>
 
             <div className="flex flex-col md:flex-row gap-3 md:items-center">
               <div className="flex flex-1 items-center gap-2 bg-white border border-zinc-200 rounded-2xl px-4 py-3 shadow-sm">
-                <span className="text-zinc-500">??</span>
+                <span className="text-zinc-500">Search</span>
                 <input
                   className="w-full outline-none text-base"
                   placeholder="Search an area or drop a pin on the map"
@@ -187,13 +237,13 @@ export default function Home() {
             {error && <p className="text-red-600 text-sm">{error}</p>}
             {geo && (
               <p className="text-sm text-zinc-700">
-                Resolved: {geo.lat}, {geo.lng} — {geo.address}
+                Resolved: {geo.lat}, {geo.lng} - {geo.address}
               </p>
             )}
             <div className="grid gap-4">
               {spaces.length === 0 && geo && <p className="text-sm text-zinc-600">No spaces found near this location yet.</p>}
               {spaces.map((s) => (
-                <div key={s.id} className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm flex flex-col gap-1">
+                <div key={s.id} className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm flex flex-col gap-1 hover:-translate-y-0.5 transition">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-lg">{s.title}</h3>
                     <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full">{Math.round(s.distance_m)} m away</span>
@@ -237,6 +287,95 @@ export default function Home() {
         </section>
 
         <section className="pb-12">
+          <div className="grid gap-4 md:grid-cols-3">
+            {FEATURES.map((f, idx) => (
+              <div key={idx} className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm hover:-translate-y-1 transition">
+                <div className="h-10 w-10 rounded-xl bg-emerald-50 text-2xl grid place-items-center text-emerald-700">
+                  {f.icon}
+                </div>
+                <h4 className="mt-3 font-semibold text-zinc-900">{f.title}</h4>
+                <p className="text-sm text-zinc-600 mt-1">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="pb-12 grid gap-6 md:grid-cols-[1.2fr,0.8fr] items-start">
+          <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 text-sm text-emerald-700">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              How it works
+            </div>
+            <h3 className="text-2xl font-semibold text-zinc-900">Book a spot in three simple steps</h3>
+            <div className="grid gap-3 md:grid-cols-3">
+              {STEPS.map((s, idx) => (
+                <div key={idx} className="rounded-2xl border border-zinc-100 p-4 bg-zinc-50/60 hover:bg-white transition">
+                  <div className="h-9 w-9 rounded-full bg-emerald-100 text-emerald-700 font-semibold grid place-items-center">{idx + 1}</div>
+                  <h4 className="mt-3 font-semibold text-zinc-900">{s.title}</h4>
+                  <p className="text-sm text-zinc-600 mt-1">{s.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white border border-emerald-100 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 text-sm text-emerald-700">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Provider toolkit
+            </div>
+            <h3 className="text-xl font-semibold text-zinc-900">Operate spaces like a pro</h3>
+            <div className="grid gap-3">
+              {PROVIDER_TOOLS.map((tool, idx) => (
+                <RoleCard key={idx} title={tool.title} accent={tool.accent}>
+                  {tool.desc}
+                </RoleCard>
+              ))}
+            </div>
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-sm text-emerald-800">
+              Drop a pin to create a space, then add hourly windows. Confirm or check-in/out bookings in one dashboard.
+            </div>
+          </div>
+        </section>
+
+        <section className="pb-12">
+          <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm grid md:grid-cols-[1.1fr,0.9fr] gap-6 items-center">
+            <div className="space-y-4">
+              <h3 className="text-2xl font-semibold text-zinc-900">People already parking with Flow</h3>
+              <p className="text-sm text-zinc-600">
+                Trusted by drivers and providers across the city for quick, reliable parking that just works.
+              </p>
+              <div className="grid gap-4">
+                {TESTIMONIALS.map((t, idx) => (
+                  <div key={idx} className="flex gap-3 p-3 rounded-2xl border border-zinc-100 bg-zinc-50/60">
+                    <img src={t.avatar} alt={t.name} className="h-12 w-12 rounded-full object-cover border border-white shadow" />
+                    <div>
+                      <p className="font-semibold text-zinc-900">{t.name}</p>
+                      <p className="text-sm text-zinc-600">{t.quote}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-emerald-500/90 to-cyan-500/90 text-white rounded-3xl p-6 shadow-lg space-y-4">
+              <p className="text-xs uppercase tracking-[0.2em] font-semibold text-white/80">Why it feels fast</p>
+              <h4 className="text-2xl font-bold leading-tight">Instant search + live availability</h4>
+              <ul className="space-y-2 text-sm text-white/90">
+                <li>• Results ranked by distance with meters-away badges.</li>
+                <li>• Live windows from providers so you never overbook.</li>
+                <li>• One-tap booking and cancel flows for drivers.</li>
+                <li>• Check-in/out controls to keep timelines clean.</li>
+              </ul>
+              <button
+                onClick={() => router.push(auth ? "/dashboard" : "/login")}
+                className="mt-2 w-full py-3 rounded-2xl bg-white text-emerald-700 font-semibold hover:shadow-lg transition"
+              >
+                {auth ? "Open dashboard" : "Login to get started"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="pb-12">
           <div className="bg-white border border-zinc-100 shadow-sm rounded-3xl p-6 space-y-4">
             <h3 className="text-xl font-semibold text-zinc-900">Drop a pin to save a spot</h3>
             <p className="text-sm text-zinc-600">Use the map picker to set a precise location for your search or to add a new provider space.</p>
@@ -263,4 +402,20 @@ function RoleCard({ title, accent, children }) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

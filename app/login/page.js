@@ -14,7 +14,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const existing = loadAuth();
-    // অটো রিডাইরেক্ট না করে ফর্ম দেখাই; ব্যবহারকারী চাইলে লগইন করবেন।
+    // If already logged in, redirect handled elsewhere.
     setChecking(false);
   }, []);
 
@@ -28,10 +28,10 @@ export default function LoginPage() {
         body: form,
         auth: false,
       });
-      saveAuth(data); // { user, access_token, ... }
+      saveAuth(data);
       router.push("/dashboard");
     } catch (e) {
-      setError(e.message || "লগইন ব্যর্থ");
+      setError(e.message || "লগইন করতে ব্যর্থ হয়েছে");
       clearAuth();
     } finally {
       setLoading(false);
@@ -49,24 +49,24 @@ export default function LoginPage() {
               Parking Platform
             </p>
             <h1 className="text-3xl font-bold mt-3 leading-tight">
-              ড্রাইভার, প্রোভাইডার, অ্যাডমিন—এক জায়গায় বুকিং ও অপারেশন।
+              এক প্ল্যাটফর্মে পার্কিং খোঁজা, বুকিং এবং স্পেস ম্যানেজমেন্ট।
             </h1>
             <p className="mt-4 text-emerald-100">
-              রিয়েল-টাইম লোকেশন, স্পেস ম্যানেজমেন্ট, বুকিং স্ট্যাটাস আপডেট।
+              ঠিকানা বা ম্যাপ থেকে সার্চ, লাইভ GPS, বুকিং টাইমলাইন, এবং প্রোভাইডার ড্যাশবোর্ডে স্পেস ও অ্যাভেইলেবিলিটি ম্যানেজমেন্ট।
             </p>
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-3 text-sm">
               <span className="inline-block h-2 w-2 rounded-full bg-white/80" />
-              ডেমো প্রোভাইডার: 01700000002 / password
+              Demo Provider: 01700000002 / password
             </div>
             <div className="flex items-center gap-3 text-sm">
               <span className="inline-block h-2 w-2 rounded-full bg-white/80" />
-              ডেমো ড্রাইভার: 01700000001 / password
+              Demo Driver: 01700000001 / password
             </div>
             <div className="flex items-center gap-3 text-sm">
               <span className="inline-block h-2 w-2 rounded-full bg-white/80" />
-              ডেমো অ্যাডমিন: 01700000003 / password
+              Demo Admin: 01700000003 / password
             </div>
           </div>
         </div>
@@ -74,19 +74,19 @@ export default function LoginPage() {
         <div className="p-8 md:p-10 flex flex-col justify-center">
           <div className="space-y-3 text-center md:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">
-              নিরাপদ লগইন
+              ফোন নম্বর দিয়ে লগইন
             </div>
-            <h2 className="text-2xl font-bold text-zinc-900">লগইন করুন</h2>
+            <h2 className="text-2xl font-bold text-zinc-900">আপনার অ্যাকাউন্টে সাইন ইন করুন</h2>
             <p className="text-sm text-zinc-600">
-              ফোন নম্বর ও পাসওয়ার্ড দিন। নতুন হলে রেজিস্টার করুন।
+              রেজিস্ট্রেশনের সময় দেওয়া ফোন নম্বর ও পাসওয়ার্ড লিখুন।
             </p>
           </div>
 
           <form onSubmit={submit} className="space-y-4 mt-6">
             <div className="space-y-1">
-              <label className="text-sm text-zinc-700">ফোন</label>
+              <label className="text-sm text-zinc-700">মোবাইল নম্বর</label>
               <input
-                className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="01700000001"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -98,7 +98,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-                placeholder="••••••••"
+                placeholder="********"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
@@ -117,14 +117,14 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-emerald-600 text-white py-2.75 rounded-xl font-semibold shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition disabled:opacity-60"
               >
-                {loading ? "লগইন হচ্ছে..." : "লগইন"}
+                {loading ? "সাইন ইন হচ্ছে..." : "সাইন ইন করুন"}
               </button>
               <button
                 type="button"
                 onClick={() => router.push("/register")}
                 className="w-full border border-zinc-200 py-2.75 rounded-xl font-semibold hover:border-emerald-300 transition"
               >
-                নতুন? রেজিস্টার করুন
+                নতুন একাউন্ট খুলুন
               </button>
             </div>
           </form>

@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#eef2ff" />
+      <stop offset="50%" stop-color="#e0f2fe" />
+      <stop offset="100%" stop-color="#ecfdf3" />
+    </linearGradient>
+    <marker id="arrow" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L14,7 L0,14 Z" fill="#0f172a" />
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)" />
+
+  <!-- Title -->
+  <text x="50%" y="50" font-family="Arial, sans-serif" font-size="24" font-weight="700" text-anchor="middle" fill="#0f172a">
+    Parking API ER Diagram
+  </text>
+  <text x="50%" y="74" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#334155">
+    Color-coded entities, PK/FK shown, Laravel migrations 2025-12-02
+  </text>
+
+  <!-- Users -->
+  <g>
+    <rect x="60" y="120" width="320" height="300" rx="16" ry="16" fill="#eef2ff" stroke="#312e81" stroke-width="2" />
+    <rect x="60" y="120" width="320" height="48" rx="16" ry="16" fill="#4338ca" />
+    <text x="220" y="148" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#f8fafc">users</text>
+    <text x="80" y="176" font-family="Arial, sans-serif" font-size="12" fill="#111827">
+      <tspan x="80" dy="0">id (PK)</tspan>
+      <tspan x="80" dy="18">name</tspan>
+      <tspan x="80" dy="18">email? (unique)</tspan>
+      <tspan x="80" dy="18">phone (unique)</tspan>
+      <tspan x="80" dy="18">password</tspan>
+      <tspan x="80" dy="18">role: driver | provider | admin</tspan>
+      <tspan x="80" dy="18">last_lat? / last_lng?</tspan>
+      <tspan x="80" dy="18">last_located_at?</tspan>
+      <tspan x="80" dy="18">remember_token</tspan>
+      <tspan x="80" dy="18">timestamps</tspan>
+    </text>
+  </g>
+
+  <!-- Parking spaces -->
+  <g>
+    <rect x="460" y="340" width="320" height="280" rx="16" ry="16" fill="#ecfdf3" stroke="#166534" stroke-width="2" />
+    <rect x="460" y="340" width="320" height="48" rx="16" ry="16" fill="#16a34a" />
+    <text x="620" y="368" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#f8fafc">parking_spaces</text>
+    <text x="480" y="398" font-family="Arial, sans-serif" font-size="12" fill="#111827">
+      <tspan x="480" dy="0">id (PK)</tspan>
+      <tspan x="480" dy="18">provider_id (FK → users.id)</tspan>
+      <tspan x="480" dy="18">title</tspan>
+      <tspan x="480" dy="18">description?</tspan>
+      <tspan x="480" dy="18">address?</tspan>
+      <tspan x="480" dy="18">place_label?</tspan>
+      <tspan x="480" dy="18">lat, lng</tspan>
+      <tspan x="480" dy="18">capacity</tspan>
+      <tspan x="480" dy="18">height_limit?</tspan>
+      <tspan x="480" dy="18">is_active</tspan>
+      <tspan x="480" dy="18">timestamps</tspan>
+    </text>
+  </g>
+
+  <!-- Bookings -->
+  <g>
+    <rect x="920" y="120" width="360" height="380" rx="16" ry="16" fill="#fffbeb" stroke="#92400e" stroke-width="2" />
+    <rect x="920" y="120" width="360" height="48" rx="16" ry="16" fill="#f59e0b" />
+    <text x="1100" y="148" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#f8fafc">bookings</text>
+    <text x="940" y="176" font-family="Arial, sans-serif" font-size="12" fill="#111827">
+      <tspan x="940" dy="0">id (PK)</tspan>
+      <tspan x="940" dy="18">user_id (FK → users.id)</tspan>
+      <tspan x="940" dy="18">space_id (FK → parking_spaces.id)</tspan>
+      <tspan x="940" dy="18">start_ts</tspan>
+      <tspan x="940" dy="18">end_ts</tspan>
+      <tspan x="940" dy="18">hours</tspan>
+      <tspan x="940" dy="18">price_total</tspan>
+      <tspan x="940" dy="18">status: reserved | confirmed | checked_in | checked_out | completed | cancelled</tspan>
+      <tspan x="940" dy="18">hold_expires_at?</tspan>
+      <tspan x="940" dy="18">checked_in_at?</tspan>
+      <tspan x="940" dy="18">checked_out_at?</tspan>
+      <tspan x="940" dy="18">timestamps</tspan>
+    </text>
+  </g>
+
+  <!-- Space availability -->
+  <g>
+    <rect x="920" y="540" width="360" height="230" rx="16" ry="16" fill="#fff1f2" stroke="#be123c" stroke-width="2" />
+    <rect x="920" y="540" width="360" height="48" rx="16" ry="16" fill="#f43f5e" />
+    <text x="1100" y="568" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#f8fafc">space_availability</text>
+    <text x="940" y="596" font-family="Arial, sans-serif" font-size="12" fill="#111827">
+      <tspan x="940" dy="0">id (PK)</tspan>
+      <tspan x="940" dy="18">space_id (FK → parking_spaces.id)</tspan>
+      <tspan x="940" dy="18">start_ts</tspan>
+      <tspan x="940" dy="18">end_ts</tspan>
+      <tspan x="940" dy="18">base_price_per_hour</tspan>
+      <tspan x="940" dy="18">is_active</tspan>
+      <tspan x="940" dy="18">timestamps</tspan>
+    </text>
+  </g>
+
+  <!-- Relations -->
+  <line x1="380" y1="210" x2="460" y2="360" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow)" />
+  <text x="410" y="238" font-family="Arial, sans-serif" font-size="12" fill="#0f172a">1 → * (provider_id)</text>
+
+  <line x1="380" y1="170" x2="920" y2="170" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow)" />
+  <text x="650" y="158" font-family="Arial, sans-serif" font-size="12" fill="#0f172a">1 → * (user_id)</text>
+
+  <line x1="780" y1="420" x2="920" y2="210" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow)" />
+  <text x="820" y="300" font-family="Arial, sans-serif" font-size="12" fill="#0f172a">1 → * (space_id)</text>
+
+  <line x1="780" y1="480" x2="920" y2="600" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow)" />
+  <text x="820" y="516" font-family="Arial, sans-serif" font-size="12" fill="#0f172a">1 → * (space_id)</text>
+
+  <!-- Legend -->
+  <g>
+    <rect x="60" y="660" width="520" height="140" rx="14" ry="14" fill="#f8fafc" stroke="#0f172a" stroke-width="1.4" />
+    <text x="80" y="690" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#0f172a">Legend</text>
+    <text x="80" y="712" font-family="Arial, sans-serif" font-size="12" fill="#111827">• Colors: Indigo = users, Green = parking_spaces, Amber = bookings, Rose = space_availability</text>
+    <text x="80" y="732" font-family="Arial, sans-serif" font-size="12" fill="#111827">• Arrows show FK direction (1 → many)</text>
+    <text x="80" y="752" font-family="Arial, sans-serif" font-size="12" fill="#111827">• “?” marks nullable columns</text>
+    <text x="80" y="772" font-family="Arial, sans-serif" font-size="12" fill="#111827">• Source: Laravel migrations (2025_12_02_*)</text>
+  </g>
+</svg>
